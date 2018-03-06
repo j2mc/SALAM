@@ -82,7 +82,7 @@ function menu_item($page, $name) {
     	echo '<li><a href="', $page, '" >', $name, '</a></li>';
 }
 
-function page_start($pagename, $sidebar = FALSE, $script = '') {
+function page_start($pagename, $tv = FALSE, $script = '') {
 	$pagetitle = strip_tags($pagename);
 	echo '
 	<!DOCTYPE html>
@@ -94,8 +94,16 @@ function page_start($pagename, $sidebar = FALSE, $script = '') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
 	<title>', $pagetitle, ' - SALAM</title>
 	<link rel="stylesheet" href="css/bootstrap.min.css" />
-	<link rel="stylesheet" href="css/dashboard.css" />
-	', $script, '	
+	<link rel="stylesheet" href="css/dashboard.css" />';
+	if ($tv) {
+		echo '<style>
+		body {background-color:#222;padding-top:5px;}
+		.navbar {min-height:30px;}
+		.navbar-nav > li > a, .navbar-brand {padding-top:5px;padding-bottom:5px;height:30px;}
+		</style>';
+	}
+	echo 
+	$script, '	
 	</head>
 	<body>
 	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
@@ -107,36 +115,29 @@ function page_start($pagename, $sidebar = FALSE, $script = '') {
             <span class="icon-bar"></span>
             <span class="icon-bar"></span>
           </button>
-          <a class="navbar-brand" href="#">SALAM</a>
+          <a class="navbar-brand" href="/">SALAM</a>
         </div>
         <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">
+          <ul class="nav navbar-nav navbar-right">';
+		  if ($tv)
+			echo '<li><a href="/"><span class="glyphicon glyphicon-remove"></span></a></li>';
+		  else {
+			echo '
             <li><a href="index.php">Dashboard</a></li>
-            <li><a href="settings.php">Settings</a></li>
-            <li class="disabled"><a href="help.php">Help</a></li>
+            <li><a href="settings.php">Settings</a></li>';
+			if ($pagetitle == 'Dashboard')
+				echo '<li><a href="index.php?tv"><span class="glyphicon glyphicon-fullscreen"></span></a></li>';
+		  }
+		  echo '
           </ul>
-          <form class="navbar-form navbar-right">
-            <input class="form-control" disabled="disabled" placeholder="Search..." type="text">
-          </form>
         </div>
       </div>
     </div>
     <div class="container-fluid">
-      <div class="row">';
-		if (!$sidebar)
-			echo '<div class="main">';
-		else
-		{
-			echo '
-			<div class="col-sm-3 col-md-2 sidebar">
-			  <ul class="nav nav-sidebar">
-				<li class="active"><a href="#">Overview</a></li>
-			  </ul>
-			</div>
-			<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">';
-		}
-		echo '
-		<h1 class="page-header">', $pagename, '</h1>';
+      <div class="row">
+		<div class="main">';
+		if (!$tv)
+			echo '<h1 class="page-header">', $pagename, '</h1>';
 	if (!empty($_SESSION['alert'])) {
 		$alert = $_SESSION['alert'];
 		unset($_SESSION['alert']);
