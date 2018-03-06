@@ -125,9 +125,9 @@ echo '
 			</div>
 		</div>
 		<div class="form-group">
-			<label for="subnet" class="col-sm-2 control-label">Subnet or Network Range</label>
+			<label for="subnet" class="col-sm-2 control-label">Subnet, Network Range or List</label>
 			<div class="col-sm-10">
-				<input type="text" class="form-control" id="subnet" name="subnet" placeholder="Ex: 192.168.0.0/24 OR 192.168.0.1-20">
+				<input type="text" class="form-control" id="subnet" name="subnet" placeholder="Ex: 192.168.0.0/24 OR 192.168.0.1-20 OR 192.168.0.1 192.168.0.5 192.168.0.9">
 				<span class="help-block">On the next page you will select which hosts from this subnet you want to monitor.</span>
 			</div>
 		</div>
@@ -140,8 +140,8 @@ echo '
 					<div class="form-group">
 					<label for="exclude" class="col-sm-2 control-label">Exclude IPs</label>
 						<div class="col-sm-10">
-							<input type="text" class="form-control" id="exclude" name="exclude" placeholder="Ex: 192.168.0.1 OR 192.168.0.1,192.168.0.2 OR 192.168.0.1-10">
-							<span class="help-block">Enter a single, comma separated list or range of IPs you want exluded from scanning.</span>
+							<input type="text" class="form-control" id="exclude" name="exclude" placeholder="Ex: 192.168.0.1 OR 192.168.0.1 192.168.0.2 OR 192.168.0.1-10">
+							<span class="help-block">Enter a single, list or range of IPs you want exluded from scanning.</span>
 						</div>
 					</div>
 					<div class="form-group">

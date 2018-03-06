@@ -22,10 +22,8 @@ function status_class($status) {
 	}
 }
 
-page_start('Dashboard', FALSE);
-
-echo '
-	<div class="container-fluid">
+function overview() {
+	echo '
 		<div class="row">';
 		
 		$site_stmt = db_prepare("SELECT id, name, status FROM sites");
@@ -62,9 +60,25 @@ echo '
 			}
 		}
 		echo '
+		</div>';
+}
+
+$endscript = '<script>$(document).ready(function() {setInterval(function(){ $( "#overview" ).load( "index.php?ajax" ); }, ' . $refresh_frequency * 1000 . ');});</script>';
+
+if (isset($_GET['ajax']))
+	overview();
+else {
+	$tv = FALSE;
+	if (isset($_GET['tv']))
+		$tv = TRUE;
+	page_start('Dashboard', $tv);
+	echo '
+	<div class="container-fluid">
+		<div id="overview">';
+	overview();
+	echo '
 		</div>
 	</div>';
-
-page_end();
-
+	page_end($endscript);
+}
 ?>
