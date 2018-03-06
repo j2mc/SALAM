@@ -1,0 +1,11 @@
+CREATE DATABASE `salam`;
+GRANT USAGE ON *.* TO salam@localhost IDENTIFIED by "s@1aM";
+GRANT ALL PRIVILEGES ON `salam`.* TO salam@localhost;
+FLUSH PRIVILEGES;
+USE salam;
+CREATE TABLE `hostdata` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `host_id` int, `type` tinytext, `data` tinytext);
+CREATE TABLE `alerts` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `type` tinytext, `type_id` int, `active` BOOLEAN, `level` int, `start` int, `lastcheck` int, `email_sent` int, `checked` int);
+CREATE TABLE `hosts` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `name` tinytext, `description` tinytext,`enabled` BOOLEAN, `site_id` int,`status` int, `avg_rt` int NOT NULL DEFAULT 0, `avg_count` int NOT NULL DEFAULT 0, `lastcheck` int, `uptime` int DEFAULT 0, `downtime` int DEFAULT 0, `warntime` int DEFAULT 0, `last_rt` int);
+CREATE TABLE `sites` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL,`name` tinytext, `subnet` tinytext, `exclude` tinytext,`hostmethod` tinytext, `servicecmd` tinytext, `alert_new_hosts` BOOLEAN, `alert_new_services` BOOLEAN, `warn_percent` int DEFAULT 5, `service_int` int NOT NULL DEFAULT 5, `discovery_int` int NOT NULL DEFAULT 60, `status` int, `lastcheck` int DEFAULT 0, `uptime` int DEFAULT 0, `downtime` int DEFAULT 0);
+CREATE TABLE `services` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `host_id` int, `type` tinytext, `port` tinytext, `name` tinytext, `enabled` BOOLEAN, `status` int, `avg_rt` int DEFAULT 0, `avg_count` int DEFAULT 0, `lastcheck` int DEFAULT 0, `uptime` int DEFAULT 0, `downtime` int DEFAULT 0, `warntime` int DEFAULT 0, `last_rt` int);
+CREATE TABLE `checkdata` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `type` tinytext, `type_id` int, `time` int, `status` int, `rtime` int);
