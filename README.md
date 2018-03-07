@@ -24,6 +24,8 @@ nano library/settings.ini
 ```
 Change from/to email addresses, everything else you can leave as default
 
+Configure Sendmail(EXIM): `dpkg-reconfigure exim4-config`
+
 Setup Apache:
 `nano /etc/apache2/sites-available/000-default.conf` change DocumentRoot to `/var/www/SALAM`
 
