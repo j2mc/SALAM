@@ -8,6 +8,8 @@ Copyright 2018
 
 require("library/SSI.php");
 
+$jsdata = '';
+
 function status_class($status) {
 	switch ($status) {
 		case 0:
@@ -86,6 +88,16 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 			$up_percent = round($result['uptime'] / ($totaltime / 100), 3);
 			$down_percent = round($result['downtime'] / ($totaltime / 100), 3);
 			$warn_percent = round($result['warntime'] / ($totaltime / 100), 3);
+			$checkdata_stmt = db_prepare("SELECT time, rtime FROM checkdata WHERE type = ? AND type_id = ? and time > ?");
+			db_execute($checkdata_stmt, array('host', $id, time() - 86400));
+			$checkdata = db_fetch($checkdata_stmt);
+			if (!empty($checkdata)) {
+				$jsdata = '[';
+				foreach($checkdata as $d) {
+					$jsdata .= '{ t: ' . $d['time'] * 1000 . ', y: ' . $d['rtime'] / 1000 . ' },';
+				}
+				$jsdata .= ']';
+			}
 			page_start($result['name'] . ' in <a href="detail.php?type=site&amp;id=' . $result['site_id'] . '">' . $sitename . '</a>', FALSE);
 			echo '
 				<div class="container-fluid">
@@ -120,6 +132,11 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 							echo '<span class="list-group-item"><strong>', $host_data['type'], '</strong><small class="pull-right">', $host_data['data'], '</small></span>';
 						echo '
 						</div>
+						<div class="col-md-6">
+							<div class="panel panel-default">
+								<canvas id="twentyfourchart"></canvas>
+							</div>
+						</div>
 					</div>
 				</div>';
 		}
@@ -142,6 +159,16 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 			$up_percent = round($result['uptime'] / ($totaltime / 100), 3);
 			$down_percent = round($result['downtime'] / ($totaltime / 100), 3);
 			$warn_percent = round($result['warntime'] / ($totaltime / 100), 3);
+			$checkdata_stmt = db_prepare("SELECT time, rtime FROM checkdata WHERE type = ? AND type_id = ? and time > ?");
+			db_execute($checkdata_stmt, array('service', $id, time() - 86400));
+			$checkdata = db_fetch($checkdata_stmt);
+			if (!empty($checkdata)) {
+				$jsdata = '[';
+				foreach($checkdata as $d) {
+					$jsdata .= '{ t: ' . $d['time'] * 1000 . ', y: ' . $d['rtime'] / 1000 . ' },';
+				}
+				$jsdata .= ']';
+			}
 			page_start($result['name'] . ' on <a href="detail.php?type=host&amp;id=' . $result['host_id'] . '">' . $hostname . '</a>', FALSE);
 			echo '
 				<div class="container-fluid">
@@ -156,6 +183,11 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 							<span class="list-group-item"><strong>Warntime</strong><small class="pull-right">', convert_seconds($result['warntime']), ' | ', $warn_percent, '%</small></span>
 							<a href="alerts.php?type=service&amp;level=2&amp;id=', $id, '" class="list-group-item list-group-item-danger"><strong>Critical Alerts</strong><small class="pull-right">', $critical_count, '</small></a>
 							<a href="alerts.php?type=service&amp;level=1&amp;id=', $id, '" class="list-group-item list-group-item-warning"><strong>Warning Alerts</strong><small class="pull-right">', $warn_count, '</small></a>
+						</div>
+						<div class="col-md-6">
+							<div class="panel panel-default">
+								<canvas id="twentyfourchart"></canvas>
+							</div>
 						</div>
 					</div>
 				</div>';
@@ -216,7 +248,54 @@ if (isset($_GET['type']) && isset($_GET['id'])) {
 		}
 	}
 }
+
+$endscript = '';
+if (!empty($jsdata)) {
+	$endscript = "
+		<script src='js/chart.bundle.min.js'></script>
+		<script>
+			var ctx = $('#twentyfourchart');
+			var chart = new Chart(ctx, {
+				type: 'line',
+				data: {
+					datasets: [{
+						borderColor: 'red',
+						borderWidth: 1,
+						pointRadius: 0,
+						data: $jsdata,
+					}]
+				},
+				options: {
+					title: {
+						display: true,
+						text: 'Response Time Last 24 Hours'
+					},
+					scales: {
+						xAxes: [{
+							type: 'time',
+							display: true,
+						}],
+						yAxes: [{
+							display: true,
+							scaleLabel: {
+								display: true,
+								labelString: 'ms'
+							}
+						}]
+					},
+					legend: {
+						display: false
+					},
+					elements: {
+						line: {
+							tension: 0
+						}
+					}
+				}
+			});
+		</script>";
+}
 	
-page_end();
+page_end($endscript);
 
 ?>

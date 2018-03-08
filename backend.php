@@ -14,9 +14,12 @@ $host_count = 0;
 $service_count = 0;
 $alert_email = [];
 
-echo date("Y-m-d H:i:s"), ',';
+//echo date("Y-m-d H:i:s"), ',';
 
 run_checks();
+
+if (date("i") == '00')
+	archive_data();
 
 if (!empty($alert_email))
 	send_alert_email($alert_email);
@@ -24,7 +27,6 @@ if (!empty($alert_email))
 function check_alert($type, $type_id, $level, $checked = 0, $rtime = 0, $avg_rt = 0) {
 	$time = time();
 	global $email_start, $email_end, $email_warn, $alert_email;
-	$checkdata_stmt = db_prepare("INSERT INTO checkdata (type, type_id, time, status, rtime) VALUES (?, ?, ?, ?, ?)");
 	$send_email = FALSE;
 	if ($time >= mktime($email_start, 0, 0) && $time <= mktime($email_end, 0, 0))
 		$between_times = TRUE;
@@ -125,8 +127,8 @@ function alert_email_body($alert) {
 	}
 	$subject = strtoupper($alert['type']) . ' ' . $text . ' - ' . $name;
 	if ($alert['level'] < 2 && $alert['type'] != 'site') {
-		$message .= ' - response time ' . $alert['rtime'] . ' ms';
-		$subject .= ' - response time ' . $alert['rtime'] . ' ms';
+		$message .= ' - response time ' . $alert['rtime'] / 1000 . ' ms';
+		$subject .= ' - response time ' . $alert['rtime'] / 1000 . ' ms';
 	}
 	$message .= '</font></td></tr>';
 	return array($subject, $message);
@@ -137,7 +139,22 @@ function send_alert_email($alerts) {
 	$headers  = 'MIME-Version: 1.0' . "\r\n";
 	$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
 	$headers .= 'From: SALAM <' . $from_email . '>';
-	$message = '<html><body><table border="0" cellpadding="0" cellspacing="0" width="100%"><tr><td valign="top"><table border="0" cellpadding="5" cellspacing="0" width="100%"><tr><td bgcolor="#222222"><font color="#9d9d9d" face="Tahoma" size="4">SALAM</font></td></tr></table></td></tr><tr><td align="center" valign="top"><table border="0" cellpadding="5" cellspacing="0" width="90%"><tr><td align="center"></td></tr><tr><td align="center" valign="top"><table border="0" cellpadding="10" cellspacing="0" width="100%"><tr><td align="center" style="border:1px solid #dddddd; border-top-left-radius: 4px; border-top-right-radius: 4px;"><font color="#555555" face="Tahoma" size="4">New Alerts</font><br /><font color="#555555" face="Tahoma" size="2">' . date("r") . '</font></td></tr>';
+	$message = '
+	<html>
+	<body>
+	  <table border="0" cellpadding="0" cellspacing="0" width="100%">
+	    <tr><td valign="top">
+		  <table border="0" cellpadding="5" cellspacing="0" width="100%">
+		    <tr><td bgcolor="#222222"><font color="#9d9d9d" face="Tahoma" size="4">S A L A M</font></td></tr>
+		  </table>
+		</td></tr>
+		<tr><td align="center" valign="top">
+		  <table border="0" cellpadding="5" cellspacing="0" width="90%">
+		    <tr><td align="center"></td></tr>
+			<tr><td align="center" valign="top">
+			  <table border="0" cellpadding="10" cellspacing="0" width="100%">
+				<tr><td align="center" style="border:1px solid #dddddd; border-top-left-radius: 4px; border-top-right-radius: 4px;">
+				  <font color="#555555" face="Tahoma" size="4">New Alerts</font><br /><font color="#555555" face="Tahoma" size="2">' . date("r") . '</font></td></tr>';
 	
 	$alert_update_stmt = db_prepare("UPDATE alerts SET email_sent = 1 WHERE id = ?");
 	if (count($alerts) == 1) {
@@ -174,13 +191,22 @@ function send_alert_email($alerts) {
 		if ($recovery_count > 0)
 			$subject .= '<' . $recovery_count . ' RECOVERY>';
 	}
-	$message .= '<tr><td align="center" style="border:1px solid #dddddd; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;"><font color="#9d9d9d" face="Tahoma" size="2">View All Alerts</font></td></tr></table><br /><br /></td></tr></table></td></tr></table></body></html>';
+	$message .= '
+				<tr><td align="center" style="border:1px solid #dddddd; border-bottom-left-radius: 4px; border-bottom-right-radius: 4px;"><font color="#9d9d9d" face="Tahoma" size="2">View All Alerts</font></td></tr>
+			  </table>
+			  <br /><br />
+			</td></tr>
+		  </table>
+		</td></tr>
+	  </table>
+	</body>
+	</html>';
 	$sent = mail($to_email, $subject, $message, $headers);
 	if ($sent) {
 		foreach ($alerts as $alert) {
 			db_execute($alert_update_stmt, array($alert['alert_id']));
 		}
-		echo 'mail sent,';
+		//echo 'mail sent,';
 	}
 }
 
@@ -188,7 +214,7 @@ function run_checks() {
 	global $host_count, $service_count;
 	$site_stmt = db_prepare("SELECT id, hostmethod, warn_percent, service_int, discovery_int, lastcheck FROM sites");
 	db_execute($site_stmt);
-	$checkdata_stmt = db_prepare("INSERT INTO checkdata (type, type_id, time, status, rtime) VALUES (?, ?, ?, ?, ?)");
+	$checkdata_stmt = db_prepare("INSERT INTO checkdata (type, type_id, time, rtime) VALUES (?, ?, ?, ?)");
 	$site_result = db_fetch($site_stmt);
 	foreach ($site_result as $site) {
 		//Loop through all sites
@@ -220,7 +246,7 @@ function run_checks() {
 				$site_status = 0;
 				$site_uptime = $time - $sitelastcheck;
 				foreach ($nmapoutput->host as $host) {
-					//parse nmap output and store in database and create alerts
+					//parse nmap output, store in database and create alerts
 					$hostaddress = '';
 					foreach ($host->address as $address) {
 						if ($address['addrtype'] == "ipv6")
@@ -228,7 +254,7 @@ function run_checks() {
 						elseif ($address['addrtype'] == "ipv4")
 							$hostaddress = $address['addr'];
 					}
-					$rtime = nano2ms($host->times['srtt']);
+					$rtime = fixnanosec($host->times['srtt']);
 					//get host id and info
 					db_execute($host_id_stmt, array($hostaddress));
 					$host_info = db_fetch($host_id_stmt, 'row');
@@ -253,26 +279,26 @@ function run_checks() {
 							$status = 2;
 						if ($status > 0) {
 							//double check result
-							echo "-$hostaddress-alert->$status";
+							//echo "-$hostaddress-alert->$status";
 							if (time() - $time < 1)
 								sleep(1);
 							$tempnmap = nmap_cmd($hostcmd . ' -oX - ' . $hostaddress);
-							$rtime = nano2ms($tempnmap->host->times['srtt']);
+							$rtime = fixnanosec($tempnmap->host->times['srtt']);
 							if ($tempnmap->runstats->hosts['up'] > 0 && ($status == 2 || $tempnmap->host->times['srtt'] < $max_rt))
 								$status -= 1;
 							$checked++;
-							echo '->', $status;
+							//echo '->', $status;
 						}
 						if ($status > 0) {
 							//triple check result
 							if (time() - $time < 3)
 								sleep(2);
 							$tempnmap = nmap_cmd($hostcmd . ' -oX - ' . $hostaddress);
-							$rtime = nano2ms($tempnmap->host->times['srtt']);
+							$rtime = fixnanosec($tempnmap->host->times['srtt']);
 							if ($tempnmap->runstats->hosts['up'] > 0 && ($status == 2 || $tempnmap->host->times['srtt'] < $max_rt))
 								$status -= 1;
 							$checked++;
-							echo '->', $status;
+							//echo '->', $status;
 						}
 						switch ($status) {
 							case 0:
@@ -287,7 +313,8 @@ function run_checks() {
 						}
 						check_alert('host', $host_info['id'], $status, $checked, $rtime, $avg_rt);
 						db_execute($host_update_stmt, array($status, $rtime, $time, $rtime, $uptime, $downtime, $warntime, $host_info['id']));
-						db_execute($checkdata_stmt, array('host', $host_info['id'], $time, $status, $rtime));
+						if ($status < 2)
+							db_execute($checkdata_stmt, array('host', $host_info['id'], $time, $rtime));
 					}
 					
 				}
@@ -323,7 +350,7 @@ function run_checks() {
 								if (empty($lastcheck))
 									$lastcheck = $time;
 								if ($nmapoutput->host->ports->port->state['state'] == 'open') {
-									$rtime = nano2ms($nmapoutput->host->times['srtt']);
+									$rtime = fixnanosec($nmapoutput->host->times['srtt']);
 									if ($rtime > $max_rt)
 										$status = 1;
 									else
@@ -333,26 +360,26 @@ function run_checks() {
 									$status = 2;
 								if ($status > 0) {
 									//double check result
-									echo 'alert->', $status;
+									//echo 'alert->', $status;
 									if (time() - $time < 1)
 										sleep(1);
 									$nmapoutput = nmap_cmd($servicecmd);
-									$rtime = nano2ms($nmapoutput->host->times['srtt']);
+									$rtime = fixnanosec($nmapoutput->host->times['srtt']);
 									if ($nmapoutput->host->ports->port->state['state'] == 'open' && ($status == 2 || $rtime < $max_rt))
 										$status -= 1;
 									$checked++;
-									echo '->', $status;
+									//echo '->', $status;
 								}
 								if ($status > 0) {
 									//triple check result
 									if (time() - $time < 2)
 										sleep(1);
 									$nmapoutput = nmap_cmd($servicecmd);
-									$rtime = nano2ms($nmapoutput->host->times['srtt']);
+									$rtime = fixnanosec($nmapoutput->host->times['srtt']);
 									if ($nmapoutput->host->ports->port->state['state'] == 'open' && ($status == 2 || $rtime < $max_rt))
 										$status -= 1;
 									$checked++;
-									echo '->', $status;
+									//echo '->', $status;
 								}
 								switch ($status) {
 									case 0:
@@ -367,7 +394,8 @@ function run_checks() {
 								}
 								check_alert('service', $s['id'], $status, $checked, $rtime, $avg_rt);
 								db_execute($service_update_stmt, array($status, $rtime, $time, $rtime, $uptime, $downtime, $warntime, $s['id']));
-								db_execute($checkdata_stmt, array('service', $s['id'], $time, $status, $rtime));
+								if ($status < 2)
+									db_execute($checkdata_stmt, array('service', $s['id'], $time, $rtime));
 								}
 						}
 					}
@@ -386,14 +414,28 @@ function run_checks() {
 	}
 }
 
-function nano2ms($time) {
+function fixnanosec($time) {
 	if ($time <= 0)
 		$time = 1000;
 	return $time;
 }
 
+function archive_data() {
+	$yesterday = time() - 86400;
+	$archive_stmt = db_prepare("INSERT INTO archivedata (type, type_id, time, min_rt, avg_rt, max_rt) SELECT type, type_id, AVG(time), MIN(rtime), AVG(rtime), MAX(rtime) FROM checkdata WHERE time < ? GROUP BY type, type_id;");
+	$deleteck_stmt = db_prepare("DELETE FROM checkdata WHERE time < ?");
+	db_execute($archive_stmt, array($yesterday));
+	db_execute($deleteck_stmt, array($yesterday));
+	if (date("G") == '0') {
+		$lastmonth = time() - 2592000;
+		$archive_stmt = db_prepare("INSERT INTO archivedata (type, type_id, time, min_rt, avg_rt, max_rt, daily) SELECT type, type_id, AVG(time), MIN(min_rt), AVG(avg_rt), MAX(max_rt), 1 FROM archivedata WHERE daily = 0 AND time < ? GROUP BY type, type_id;");
+		$deletearchive_stmt = db_prepare("DELETE FROM archivedata WHERE time < ? AND daily = 0");
+		db_execute($archive_stmt, array($lastmonth));
+		db_execute($deleteck_stmt, array($lastmonth));
+	}
+}
+
 $runtime += microtime(true);
-echo 'hosts=', $host_count, ',services=', $service_count, ',runtime=', $runtime, ' sec
-';
+//echo 'hosts=', $host_count, ',services=', $service_count, ',runtime=', $runtime, ' sec';
 
 ?>
