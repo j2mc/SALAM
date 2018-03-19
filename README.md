@@ -34,3 +34,14 @@ Then restart Apache `systemctl restart apache2`
 Set SALAM to run in the background:
 `crontab -e -u www-data`
 Add `* * * * * php /var/www/SALAM/backend.php` to bottom of file
+
+## Update Instructions
+```
+cd /var/www
+mv SALAM SALAM.old
+git clone https://github.com/j2mc/SALAM.git
+cd SALAM
+mysql -u root -p < salam180319update.sql
+nano library/settings.ini
+```
+Enter your email info into the settings.ini again
