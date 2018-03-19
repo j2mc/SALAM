@@ -64,27 +64,45 @@ if (isset($_GET['type']) && isset($_GET['level']) && isset($_GET['id'])) {
 	$level = check_xss($_GET['level']);
 	$id = check_xss($_GET['id']);
 	
-	if ($type == 'site')
-		$name_stmt = db_prepare("SELECT name FROM sites WHERE id = ?");
-	elseif ($type == 'host')
-		$name_stmt = db_prepare("SELECT name FROM hosts WHERE id = ?");
-	elseif ($type == 'service') {
-		$name_stmt = db_prepare("SELECT name FROM services WHERE id = ?");
-		$host_stmt = db_prepare("SELECT hosts.id, hosts.name FROM hosts JOIN services on hosts.id = services.host_id WHERE services.id = ?");
-		db_execute($host_stmt, array($id));
-		$host_result = db_fetch($host_stmt, 'row');
-	}
-	db_execute($name_stmt, array($id));
-	$name = '<a href="detail.php?type=' . $type . '&amp;id=' . $id . '">' . db_fetch($name_stmt, 'col') . '</a>';
-	if (isset($host_result))
-		$name .= ' on <a href="detail.php?type=host&amp;id=' . $host_result['id'] . '">' . $host_result['name'] . '</a>';
-	
 	if ($level == 1)
 		$levelname = 'Warning';
 	else
 		$levelname = 'Critical';
 	
-	page_start($name . ' ' . $levelname . ' Alerts', FALSE);
+	if ($type == 'site') {
+		$name_stmt = db_prepare("SELECT name FROM sites WHERE id = ?");
+		db_execute($name_stmt, array($id));
+		$breadcrumb = array(
+			"Dashboard" => "/",
+			db_fetch($name_stmt, 'col') => 'detail.php?type=site&amp;id=' . $id,
+			"active" => $levelname . ' Alerts'
+		);
+	}
+	elseif ($type == 'host') {
+		$name_stmt = db_prepare("SELECT hosts.name AS host_name, sites.id AS site_id, sites.name AS site_name FROM hosts, sites WHERE hosts.id = ? AND hosts.site_id = sites.id");
+		db_execute($name_stmt, array($id));
+		$result = db_fetch($name_stmt, 'row');
+		$breadcrumb = array(
+			"Dashboard" => "/",
+			$result['site_name'] => 'detail.php?type=site&amp;id=' . $result['site_id'],
+			$result['host_name'] => 'detail.php?type=host&amp;id=' . $id,
+			"active" => $levelname . ' Alerts'
+		);
+	}
+	elseif ($type == 'service') {
+		$name_stmt = db_prepare("SELECT services.name, hosts.id AS host_id, hosts.name AS host_name, sites.id AS site_id, sites.name AS site_name FROM services, hosts, sites WHERE services.id = ? AND services.host_id = hosts.id AND hosts.site_id = sites.id");
+		db_execute($name_stmt, array($id));
+		$result = db_fetch($name_stmt, 'row');
+		$breadcrumb = array(
+			"Dashboard" => "/",
+			$result['site_name'] => 'detail.php?type=site&amp;id=' . $result['site_id'],
+			$result['host_name'] => 'detail.php?type=host&amp;id=' . $result['host_id'],
+			$result['name'] => 'detail.php?type=service&amp;id=' . $id,
+			"active" => $levelname . ' Alerts'
+		);
+	}
+	
+	page_start($breadcrumb, FALSE);
 	
 	$alert_stmt = db_prepare("SELECT active, start, lastcheck FROM alerts WHERE type = ? AND type_id = ? AND level = ? ORDER BY lastcheck DESC");
 	db_execute($alert_stmt, array($type, $id, $level));
@@ -102,6 +120,8 @@ if (isset($_GET['type']) && isset($_GET['level']) && isset($_GET['id'])) {
 		}
 		echo '</tbody></table>';
 	}
+	else
+		echo '<h2 class="text-center">No Alerts Found</h2>';
 	
 	
 }

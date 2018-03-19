@@ -9,4 +9,18 @@ CREATE TABLE `hosts` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `name` tinyt
 CREATE TABLE `sites` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL,`name` tinytext, `subnet` tinytext, `exclude` tinytext,`hostmethod` tinytext, `servicecmd` tinytext, `alert_new_hosts` BOOLEAN, `alert_new_services` BOOLEAN, `warn_percent` tinyint DEFAULT 5, `service_int` tinyint NOT NULL DEFAULT 5, `discovery_int` tinyint NOT NULL DEFAULT 60, `status` tinyint, `lastcheck` int DEFAULT 0, `uptime` int DEFAULT 0, `downtime` int DEFAULT 0);
 CREATE TABLE `services` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `host_id` int, `type` tinytext, `port` tinytext, `name` tinytext, `enabled` BOOLEAN, `status` tinyint, `avg_rt` bigint DEFAULT 0, `avg_count` int DEFAULT 0, `lastcheck` int DEFAULT 0, `uptime` int DEFAULT 0, `downtime` int DEFAULT 0, `warntime` int DEFAULT 0, `last_rt` int);
 CREATE TABLE `checkdata` (`id` int PRIMARY KEY AUTO_INCREMENT NOT NULL, `type` tinytext, `type_id` int, `time` int, `rtime` int);
-CREATE TABLE `archivedata` ( `id` INT NOT NULL AUTO_INCREMENT , `type` TINYTEXT NOT NULL , `type_id` INT NOT NULL , `time` INT NOT NULL , `min_rt` INT NOT NULL , `avg_rt` INT NOT NULL , `max_rt` INT NOT NULL , `daily` BOOLEAN , PRIMARY KEY (`id`));
+CREATE TABLE `archivedata` ( `id` INT NOT NULL AUTO_INCREMENT , `type` TINYTEXT NOT NULL , `type_id` INT NOT NULL , `time` INT NOT NULL , `min_rt` INT NOT NULL , `avg_rt` INT NOT NULL , `max_rt` INT NOT NULL , `resolution` TINYINT , PRIMARY KEY (`id`));
+CREATE TABLE `runstats` (
+  `id` int(11) PRIMARY KEY AUTO_INCREMENT NOT NULL,
+  `time` int(11) NOT NULL,
+  `runtime` float NOT NULL,
+  `hosts` smallint(6) NOT NULL,
+  `services` smallint(6) NOT NULL,
+  `warning` smallint(6) NOT NULL,
+  `warning_conf` smallint(6) NOT NULL,
+  `critical` smallint(6) NOT NULL,
+  `critical_conf` smallint(6) NOT NULL,
+  `email_sent` tinyint(1) NOT NULL,
+  `rows_added` int(11) NOT NULL,
+  `rows_deleted` int(11) NOT NULL
+)

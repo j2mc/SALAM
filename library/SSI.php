@@ -28,7 +28,6 @@ try {
 }
 catch (Exception $e) {
 	echo '<html><head><title>SALAM - Error</title></head><body>
-	<h2>For Initial Setup <a href="setup.php">Click Here</a></h2>
 	<p>If setup has already been completed there seems to be a problem with SQL: <strong>', $e->getMessage(), '</strong>
 	</body></html>';
 	exit(1);
@@ -82,62 +81,67 @@ function menu_item($page, $name) {
     	echo '<li><a href="', $page, '" >', $name, '</a></li>';
 }
 
-function page_start($pagename, $tv = FALSE, $script = '') {
-	$pagetitle = strip_tags($pagename);
+function page_start($breadcrumb, $tv = FALSE, $script = '', $column_count = 2) {
+	$pagetitle = $breadcrumb['active'];
 	echo '
 	<!DOCTYPE html>
 	<html lang="en">
 	<head>
-	<meta http-equiv="content-type" content="text/html; charset=UTF-8">
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+	<meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<title>', $pagetitle, ' - SALAM</title>
 	<link rel="stylesheet" href="css/bootstrap.min.css" />
-	<link rel="stylesheet" href="css/dashboard.css" />';
-	if ($tv) {
-		echo '<style>
-		body {background-color:#222;padding-top:5px;}
-		.navbar {min-height:30px;}
-		.navbar-nav > li > a, .navbar-brand {padding-top:5px;padding-bottom:5px;height:30px;}
-		</style>';
+	<link rel="stylesheet" href="css/open-iconic-bootstrap.min.css" />
+	<style>
+	@media (min-width: 576px) {
+		.card-columns {
+			column-count: 1;
+		}
 	}
-	echo 
+	@media (min-width: 768px) {
+		.card-columns {
+			column-count: 2;
+		}
+	}
+	@media (min-width: 992px) {
+		.card-columns {
+			column-count: ', $column_count, ';
+		}
+	}
+	</style>', 
 	$script, '	
 	</head>
 	<body>
-	<div class="navbar navbar-inverse navbar-fixed-top" role="navigation">
-      <div class="container-fluid">
-        <div class="navbar-header">
-          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
-            <span class="sr-only">Toggle navigation</span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-            <span class="icon-bar"></span>
-          </button>
-          <a class="navbar-brand" href="/">SALAM</a>
-        </div>
-        <div class="navbar-collapse collapse">
-          <ul class="nav navbar-nav navbar-right">';
-		  if ($tv)
-			echo '<li><a href="/"><span class="glyphicon glyphicon-remove"></span></a></li>';
-		  else {
-			echo '
-            <li><a href="index.php">Dashboard</a></li>
-            <li><a href="settings.php">Settings</a></li>';
-			if ($pagetitle == 'Dashboard')
-				echo '<li><a href="index.php?tv"><span class="glyphicon glyphicon-fullscreen"></span></a></li>';
-		  }
-		  echo '
-          </ul>
-        </div>
+	<nav class="navbar navbar-expand-md navbar-dark bg-dark">
+      <a class="navbar-brand" href="/">SALAM</a>
+      <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#mainNavBar" aria-controls="mainNavBar" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="mainNavBar">
+        <ul class="navbar-nav ml-auto">
+          <li class="nav-item">
+            <a class="nav-link" href="\">Dashboard</a>
+          </li>
+		  <li class="nav=item">
+			<a class="nav-link" href="settings.php"><span class="oi oi-cog" style="top:2px" title="Settings" aria-hidden="true"></span></a>
+		  </li>
+        </ul>
       </div>
-    </div>
-    <div class="container-fluid">
-      <div class="row">
-		<div class="main">';
-		if (!$tv)
-			echo '<h1 class="page-header">', $pagename, '</h1>';
+    </nav>
+    <main role="main" class="container-fluid">';
+	//if (!$tv)
+	echo '
+		<nav aria-label="breadcrumb">
+			<ol class="breadcrumb">';
+	foreach ($breadcrumb as $name => $url) {
+		if ($name != 'active')
+			echo '<li class="breadcrumb-item"><a href="', $url, '">', $name, '</a></li>';
+		else
+			echo '<li class="breadcrumb-item active" aria-current="page">', $url, '</li>';
+	}
+	echo '
+			</ol>
+		</nav>';
 	if (!empty($_SESSION['alert'])) {
 		$alert = $_SESSION['alert'];
 		unset($_SESSION['alert']);
@@ -147,15 +151,13 @@ function page_start($pagename, $tv = FALSE, $script = '') {
 		}
 		else
 			$alerttype = 'info';
-		echo '<div class="alert alert-', $alerttype, '"><button type="button" class="close"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>', $alert, '</div>';
+		echo '<div class="alert alert-', $alerttype, ' alert-dismissible fade show" role="alert">', $alert, '<button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button></div>';
 	}
 }
 
 function page_end($endscript = '') {
 	echo '
-			</div>
-		</div>
-	</div>
+	</main>
 	<script src="js/jquery-2.1.4.min.js" type="text/javascript"></script>
 	<script src="js/bootstrap.min.js" type="text/javascript"></script>
 	';

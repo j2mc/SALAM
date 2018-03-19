@@ -9,20 +9,36 @@ Copyright 2016
 
 require('library/SSI.php');
 
-$runtime = -microtime(true);
-$host_count = 0;
-$service_count = 0;
+$runstats = array(
+	'time' => time(),
+	'runtime' => -microtime(true),
+	'hosts' => 0,
+	'services' => 0,
+	'warning' => 0,
+	'warning_conf' => 0,
+	'critical' => 0,
+	'critical_conf' => 0,
+	'email_sent' => 0,
+	'rows_added' => 0,
+	'rows_deleted' => 0);
 $alert_email = [];
 
 //echo date("Y-m-d H:i:s"), ',';
 
 run_checks();
 
-if (date("i") == '00')
-	archive_data();
-
 if (!empty($alert_email))
 	send_alert_email($alert_email);
+
+//Archive data every 15 minutes
+if (date("i") % 15 == 0)
+	archive_data();
+
+$runstats['runtime'] += microtime(true);
+if (isset($_GET['interactive']))
+	print_r($runstats);
+$runstat_stmt = db_prepare("INSERT INTO runstats (time, runtime, hosts, services, warning, warning_conf, critical, critical_conf, email_sent, rows_added, rows_deleted) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+db_execute($runstat_stmt, array_values($runstats));
 
 function check_alert($type, $type_id, $level, $checked = 0, $rtime = 0, $avg_rt = 0) {
 	$time = time();
@@ -135,7 +151,7 @@ function alert_email_body($alert) {
 }
 
 function send_alert_email($alerts) {
-	global $from_email, $to_email;
+	global $from_email, $to_email, $runstats;
 	$headers  = 'MIME-Version: 1.0' . "\r\n";
 	$headers .= 'Content-type: text/html; charset=iso-8859-1' . "\r\n";
 	$headers .= 'From: SALAM <' . $from_email . '>';
@@ -206,12 +222,12 @@ function send_alert_email($alerts) {
 		foreach ($alerts as $alert) {
 			db_execute($alert_update_stmt, array($alert['alert_id']));
 		}
-		//echo 'mail sent,';
+		$runstats['email_sent'] = TRUE;
 	}
 }
 
 function run_checks() {
-	global $host_count, $service_count;
+	global $runstats;
 	$site_stmt = db_prepare("SELECT id, hostmethod, warn_percent, service_int, discovery_int, lastcheck FROM sites");
 	db_execute($site_stmt);
 	$checkdata_stmt = db_prepare("INSERT INTO checkdata (type, type_id, time, rtime) VALUES (?, ?, ?, ?)");
@@ -226,7 +242,7 @@ function run_checks() {
 			//Loop through all enabled hosts in site
 			foreach ($result as $v) {
 				$hostlist .= $v[0] . ' ';
-				$host_count++;
+				$runstats['hosts']++;
 			}
 			if ($site['hostmethod'] == "aggressive")
 				$hostcmd = "-sn -v -n";
@@ -270,13 +286,17 @@ function run_checks() {
 						$max_rt = $avg_rt * $site['warn_percent'];
 						$time_since_last = $time - $host_info['lastcheck'];
 						if ($host->status['state'] == 'up') {
-							if ($rtime > $max_rt)
+							if ($rtime > $max_rt) {
 								$status = 1;
+								$runstats['warning']++;
+							}
 							else
 								$status = 0;
 						}
-						else
+						else {
 							$status = 2;
+							$runstats['critical']++;
+						}
 						if ($status > 0) {
 							//double check result
 							//echo "-$hostaddress-alert->$status";
@@ -306,9 +326,11 @@ function run_checks() {
 								break;
 							case 1:
 								$warntime = $time - $lastcheck;
+								$runstats['warning_conf']++;
 								break;
 							case 2:
 								$downtime = $time - $lastcheck;
+								$runstats['critical_conf']++;
 								break;
 						}
 						check_alert('host', $host_info['id'], $status, $checked, $rtime, $avg_rt);
@@ -332,7 +354,7 @@ function run_checks() {
 						if (!empty($service_result)) {
 							foreach ($service_result as $s) {
 								//Loop through all services that need to be scanned, run scan, update db and create alerts
-								$service_count++;
+								$runstats['services']++;
 								$uptime = 0;
 								$downtime = 0;
 								$warntime = 0;
@@ -351,13 +373,17 @@ function run_checks() {
 									$lastcheck = $time;
 								if ($nmapoutput->host->ports->port->state['state'] == 'open') {
 									$rtime = fixnanosec($nmapoutput->host->times['srtt']);
-									if ($rtime > $max_rt)
+									if ($rtime > $max_rt) {
 										$status = 1;
+										$runstats['warning']++;
+									}
 									else
 										$status = 0;
 								}
-								else
+								else {
 									$status = 2;
+									$runstats['critical']++;
+								}
 								if ($status > 0) {
 									//double check result
 									//echo 'alert->', $status;
@@ -387,9 +413,11 @@ function run_checks() {
 										break;
 									case 1:
 										$warntime = $time - $lastcheck;
+										$runstats['warning_conf']++;
 										break;
 									case 2:
 										$downtime = $time - $lastcheck;
+										$runstats['critical_conf']++;
 										break;
 								}
 								check_alert('service', $s['id'], $status, $checked, $rtime, $avg_rt);
@@ -404,7 +432,9 @@ function run_checks() {
 			else {
 				//Site is DOWN!
 				$site_status = 2;
-				$site_downtime = $time - $sitelastcheck;				
+				$site_downtime = $time - $sitelastcheck;	
+				$runstats['critical']++;
+				$runstats['critical_conf']++;
 			}
 			check_alert('site', $site['id'], $site_status);
 			$site_update_stmt = db_prepare("UPDATE sites SET status = ?, lastcheck = ?, uptime = uptime + ?, downtime = downtime + ? WHERE id = ?");
@@ -421,21 +451,38 @@ function fixnanosec($time) {
 }
 
 function archive_data() {
-	$yesterday = time() - 86400;
-	$archive_stmt = db_prepare("INSERT INTO archivedata (type, type_id, time, min_rt, avg_rt, max_rt) SELECT type, type_id, AVG(time), MIN(rtime), AVG(rtime), MAX(rtime) FROM checkdata WHERE time < ? GROUP BY type, type_id;");
-	$deleteck_stmt = db_prepare("DELETE FROM checkdata WHERE time < ?");
-	db_execute($archive_stmt, array($yesterday));
-	db_execute($deleteck_stmt, array($yesterday));
-	if (date("G") == '0') {
-		$lastmonth = time() - 2592000;
-		$archive_stmt = db_prepare("INSERT INTO archivedata (type, type_id, time, min_rt, avg_rt, max_rt, daily) SELECT type, type_id, AVG(time), MIN(min_rt), AVG(avg_rt), MAX(max_rt), 1 FROM archivedata WHERE daily = 0 AND time < ? GROUP BY type, type_id;");
-		$deletearchive_stmt = db_prepare("DELETE FROM archivedata WHERE time < ? AND daily = 0");
-		db_execute($archive_stmt, array($lastmonth));
-		db_execute($deleteck_stmt, array($lastmonth));
+	global $runstats;
+	$time = time();
+	//Calulate min, max, avg for past 15 minutes and put into archive table
+	//Resolution: 0 = 15 minutes | 1 = hourly | 2 = daily
+	$archive_stmt = db_prepare("INSERT INTO archivedata (type, type_id, time, min_rt, avg_rt, max_rt, resolution) SELECT type, type_id, AVG(time), MIN(rtime), AVG(rtime), MAX(rtime), ? FROM checkdata WHERE time > ? GROUP BY type, type_id;");
+	$result = db_execute($archive_stmt, array(0, $time - 900));
+	$runstats['rows_added'] += $result['count'];
+	if (date("i") == '00') { //Run Every hour
+		//Calulate min, max, avg for past hour and put into archive table
+		$result = db_execute($archive_stmt, array(1, $time - 3600));
+		$runstats['rows_added'] += $result['count'];
+		//Delete 15 min data older than 7 days
+		$deletearchive_stmt = db_prepare("DELETE FROM archivedata WHERE time < ? AND resolution = ?");
+		$result = db_execute($deletearchive_stmt, array($time - 604800, 0));
+		$runstats['rows_deleted'] += $result['count'];
+		if (date("G") == '0') { //Run Every 24 hours
+			//Calculate min, max, avg for past day and put into archive table
+			$result = db_execute($archive_stmt, array(2, $time - 86400));
+			$runstats['rows_added'] += $result['count'];
+			//Delete hourly data older than 30 days
+			$result = db_execute($deletearchive_stmt, array($time - 2592000, 1));
+			$runstats['rows_deleted'] += $result['count'];
+		}
+		//Delete full data older than 24 hours
+		$deleteck_stmt = db_prepare("DELETE FROM checkdata WHERE time < ?");
+		$result = db_execute($deleteck_stmt, array($time - 86400));
+		$runstats['rows_deleted'] += $result['count'];
+		//Delete runstats older than 24 hours
+		$deleterun_stmt = db_prepare("DELETE FROM runstats WHERE time < ?");
+		$result = db_execute($deleterun_stmt, array($time - 86400));
+		$runstats['rows_deleted'] += $result['count'];
 	}
 }
-
-$runtime += microtime(true);
-//echo 'hosts=', $host_count, ',services=', $service_count, ',runtime=', $runtime, ' sec';
 
 ?>

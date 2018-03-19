@@ -50,15 +50,22 @@ if (isset($_GET['mailtest'])) {
 	}
 }
 
-page_start('Settings');
+$breadcrumb = array(
+	"active" => "Settings"
+);
+
+page_start($breadcrumb);
 
 $site_stmt = db_prepare("SELECT id, name, subnet FROM sites");
 db_execute($site_stmt);
 $site_result = db_fetch($site_stmt);
+echo '
+<div class="container">
+	<div class="card m-3">
+		<h4 class="card-header">Sites</h4>';
 if (!empty($site_result)) {
-	echo '<div class="panel panel-default">
-	<div class="panel-heading"><h4>Sites</h4></div>
-	<table class="table table-hover">';
+	echo '
+		<ul class="list-group list-group-flush">';
 	$host_count_stmt = db_prepare("SELECT COUNT(id) FROM hosts WHERE site_id = ?");
 	$enabled_count_stmt = db_prepare("SELECT COUNT(id) FROM hosts WHERE site_id = ? AND enabled = 1");
 	foreach ($site_result as $site) {
@@ -66,17 +73,59 @@ if (!empty($site_result)) {
 		$host_count = db_fetch($host_count_stmt, 'col');
 		db_execute($enabled_count_stmt, array($site['id']));
 		$enabled_count = db_fetch($enabled_count_stmt, 'col');
-		echo '<tr><td><strong>', $site['name'], '</strong> (', $enabled_count, ' of ', $host_count, ' Enabled)<small>', $site['subnet'], '</small></td><td align="right"><!--<a href="addsite.php?action=edit&amp;id=', $site['id'], '" class="btn btn-warning"><span class="glyphicon glyphicon-pencil"></span></a>--> <a href="#" data-toggle="modal" data-target="#deletemodal" data-siteid="', $site['id'], '", class="btn btn-danger"><span class="glyphicon glyphicon-trash"></span></a></td></tr>';
+		echo '
+		<li class="list-group-item d-flex align-items-center justify-content-between">
+			<strong>', $site['name'], '</strong>
+			<small>(', $enabled_count, ' of ', $host_count, ' Enabled)  ', $site['subnet'], '</small>
+			<!--<a href="addsite.php?action=edit&amp;id=', $site['id'], '" class="btn btn-warning"><i data-feather="edit"></i></a>-->
+			<a href="#" data-toggle="modal" data-target="#deletemodal" data-siteid="', $site['id'], '", class="btn btn-small btn-outline-danger"><span class="oi oi-trash" title="Delete" aria-hidden="true"></span></a></li>';
 	}
-	echo '</table></div>';
+	echo '</ul>';
+	
 } else {
-	echo '<h4>No Sites Found</h4>';
+	echo '<h4 class="card-title text-center">No Sites Found</h4>';
 }
 echo '
-	<a href="addsite.php" class="btn btn-primary btn-lg">Add Site</a><br />
-	<a href="settings.php?mailtest" class="btn btn-default btn-lg">Send Test Email</a>
-	<div class="modal fade" id="deletemodal" data-backdrop="static" data-keyboard="false" tabindex="-1" role="dialog" aria-labelledby="deletmodalLabel" aria-hidden="true">
-		<div class="modal-dialog">
+		<div class="card-footer text-center">
+			<a href="addsite.php" class="btn btn-outline-primary">Add Site</a><br />
+		</div>
+	</div>
+	<div class="card m-3">
+		<h4 class="card-header">Other Functions</h4>
+		<div class="card-body">
+			<a href="settings.php?mailtest" class="btn btn-outline-secondary">Send Test Email</a>
+		</div>
+	</div>
+	<div class="card m-3">
+		<h4 class="card-header">Last 10 Run Stats</h4>
+		<table class="table table-hover table-sm table-responsive text-center">
+			<thead>
+				<tr>
+					<th>Time</th><th>Runtime</th><th>Hosts/Services Checked</th><th>Warnings Detected/Confirmed</th><th>Critical Detected/Confirmed</th><th>Emails Sent</th><th>Archive Rows Added/Deleted</th>
+				</tr>
+			</thead>
+			<tbody>';
+$runstat_stmt = db_prepare("SELECT * FROM runstats ORDER BY time DESC LIMIT 10");
+db_execute($runstat_stmt);
+$runstats = db_fetch($runstat_stmt);
+foreach($runstats as $stat) {
+	echo '<tr>
+		<td>', date("H:i:s", $stat['time']), '</td>
+		<td>', round($stat['runtime'], 2), ' sec</td>
+		<td>', $stat['hosts'], ' / ', $stat['services'], '</td>
+		<td>', $stat['warning'], ' / ', $stat['warning_conf'], '</td>
+		<td>', $stat['critical'], ' / ', $stat['critical_conf'], '</td>
+		<td>', $stat['email_sent'], '</td>
+		<td>', $stat['rows_added'], ' / ', $stat['rows_deleted'], '</td>
+	</tr>';
+}
+echo '
+			</tbody>
+		</table>
+	</div>
+</div>
+	<div class="modal fade" id="deletemodal" tabindex="-1" role="dialog" aria-hidden="true">
+		<div class="modal-dialog modal-dialog-centered" role="document">
 		</div>
 	</div>
 ';

@@ -16,21 +16,21 @@ if (isset($_GET['enable'])) {
 	$host_stmt = db_prepare("UPDATE hosts SET enabled=? WHERE id=?");
 	db_execute($host_stmt, array(TRUE, $host_id));
 	echo '
-	<form class="form-horizontal" action="scanhost.php?save=', $host_id, '" method="post" id="host-form-', $host_id, '">
-		<div class="form-group">
-			<label for="name" class="col-sm-2 control-label">Name</label>
+	<form action="scanhost.php?save=', $host_id, '" method="post" id="host-form-', $host_id, '">
+		<div class="form-group row">
+			<label for="name" class="col-sm-2 col-form-label">Name</label>
 			<div class="col-sm-10">
 				<input type="text" name="name" class="form-control" placeholder="Name" value="', $hostinfo['name'], '" />
 			</div>
 		</div>
-		<div class="form-group">
-			<label class="col-sm-2 control-label">Description</label>
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">Description</label>
 			<div class="col-sm-10">
 				<input type="text" name="description" class="form-control" placeholder="Description" value="', $hostinfo['description'], '" />
 			</div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label">Services</label>
+			<label class="col-sm-2 col-form-label">Services</label>
 			<div class="col-sm-10">';
 			$service_stmt = db_prepare("SELECT id, type, port, name, enabled FROM services WHERE host_id = ?");
 			db_execute($service_stmt, array($host_id));
@@ -101,21 +101,21 @@ elseif (isset($_GET['scan'])) {
 	db_execute($host_stmt, array(TRUE, $host_id));
 	$service_stmt = db_prepare("INSERT INTO services (host_id, type, port, name, avg_rt, avg_count) VALUES (?, ?, ?, ?, ?, ?)");
 	echo '
-	<form class="form-horizontal" action="scanhost.php?save=', $host_id, '" method="post" id="host-form-', $host_id, '">
-		<div class="form-group">
-			<label for="name" class="col-sm-2 control-label">Name</label>
+	<form action="scanhost.php?save=', $host_id, '" method="post" id="host-form-', $host_id, '">
+		<div class="form-group row">
+			<label for="name" class="col-sm-2 col-form-label">Name</label>
 			<div class="col-sm-10">
 				<input type="text" name="name" class="form-control" placeholder="Name" value="', $hostinfo['name'], '" />
 			</div>
 		</div>
-		<div class="form-group">
-			<label class="col-sm-2 control-label">Description</label>
+		<div class="form-group row">
+			<label class="col-sm-2 col-form-label">Description</label>
 			<div class="col-sm-10">
 				<input type="text" name="description" class="form-control" placeholder="Description" value="', $hostinfo['description'], '" />
 			</div>
 		</div>
 		<div class="form-group">
-			<label class="col-sm-2 control-label">Services</label>
+			<label class="col-sm-2 col-form-label">Services</label>
 			<div class="col-sm-10">
 				<table class="table table-condensed table-striped">
 					<thead><tr><th>Monitor</th><th>Type</th><th>Service Name</th></tr></thead><tbody>';
@@ -146,7 +146,9 @@ elseif (isset($_GET['scan'])) {
 	<div id=\"host-results-$host_id\"></div>
 	<script>
 		$(function() {
-			$('.servicechk').bootstrapToggle();
+			$('.servicechk').bootstrapToggle({
+				offstyle: 'secondary'
+			});
 			$('#host-form-$host_id input').focus(function() {
 				$('#host-results-$host_id').html('');
 			});

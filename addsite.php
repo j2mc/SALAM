@@ -81,13 +81,13 @@ if (isset($_POST['sitename']) && isset($_POST['subnet'])) {
 			}
 				
 			echo '
-				<div class="panel panel-default">
-					<div class="panel-heading">
-						<input type="checkbox" class="bs-toggle" data-on="Enabled" data-off="Disabled" data-size="mini" id="host-toggle-', $host_result['id'], '" data-host-id="', $host_result['id'], '" />
+				<div class="card">
+					<div class="card-header">
+						<input type="checkbox" class="bs-toggle" data-on="Enabled" data-off="Disabled" data-size="small" data-offstyle="secondary" id="host-toggle-', $host_result['id'], '" data-host-id="', $host_result['id'], '" />
 						<strong>', $hostname, '</strong> <small>(', $addresses, ')</small>
 					</div>
-					<div id="host-data-', $host_result['id'], '" class="panel-collapse collapse">
-						<div class="panel-body">
+					<div id="host-data-', $host_result['id'], '" class="collapse">
+						<div class="card-body">
 						</div>
 					</div>
 				</div>
@@ -101,7 +101,7 @@ if (isset($_POST['sitename']) && isset($_POST['subnet'])) {
 					var hostid = $(this).attr('data-host-id');
 					if ($(this).prop('checked')) {
 						//$(this).bootstrapToggle('disable');
-						$(this).parent().parent().next().children().html('<h5>Scanning...</h5><div class=\"progress\"><div class=\"progress-bar progress-bar-striped active\" style=\"width: 100%\"></div></div>');
+						$(this).parent().parent().next().children().html('<h5>Scanning...</h5><div class=\"progress\"><div class=\"progress-bar progress-bar-striped progress-bar-animated\" style=\"width: 100%\"></div></div>');
 						$(this).parent().parent().next().collapse('show');
 						$(this).parent().parent().next().children().load('scanhost.php?scan='+hostid);
 					} else {
@@ -114,89 +114,79 @@ if (isset($_POST['sitename']) && isset($_POST['subnet'])) {
 	}
 	
 } else {
-page_start('Add Site', FALSE, '<link href="css/bootstrap-toggle.min.css" rel="stylesheet" />');
+
+$breadcrumb = array(
+	"Settings" => "settings.php",
+	"active" => "Add Site"
+);
+
+page_start($breadcrumb, FALSE, '<link href="css/bootstrap-toggle.min.css" rel="stylesheet" />');
 
 echo '
-	<form class="form-horizontal" role="form" action="" method="post" name="add-site-form" id="add-site-form">
-		<div class="form-group">
-			<label for="name" class="col-sm-2 control-label">Site Name</label>
-			<div class="col-sm-10">
-				<input type="text" class="form-control" id="sitename" name="sitename" placeholder="Ex: Main Office">
-			</div>
-		</div>
-		<div class="form-group">
-			<label for="subnet" class="col-sm-2 control-label">Subnet, Network Range or List</label>
-			<div class="col-sm-10">
-				<input type="text" class="form-control" id="subnet" name="subnet" placeholder="Ex: 192.168.0.0/24 OR 192.168.0.1-20 OR 192.168.0.1 192.168.0.5 192.168.0.9">
-				<span class="help-block">On the next page you will select which hosts from this subnet you want to monitor.</span>
-			</div>
-		</div>
-		<div class="panel panel-default">
-			<div class="panel-heading">
-				<a data-toggle="collapse" href="#collapseOne"><h4 class="panel-title">Advanced Options <span class="glyphicon glyphicon-chevron-down"></span></h4></a>
-			</div>
-			<div id="collapseOne" class="panel-collapse collapse">
-				<div class="panel-body">
-					<div class="form-group">
-					<label for="exclude" class="col-sm-2 control-label">Exclude IPs</label>
-						<div class="col-sm-10">
-							<input type="text" class="form-control" id="exclude" name="exclude" placeholder="Ex: 192.168.0.1 OR 192.168.0.1 192.168.0.2 OR 192.168.0.1-10">
-							<span class="help-block">Enter a single, list or range of IPs you want exluded from scanning.</span>
-						</div>
+<div class="container">
+	<div class="card" id="add-site-form-card">
+		<div class="card-body">
+			<form action="" method="post" name="add-site-form" id="add-site-form">
+				<div class="form-group row">
+					<label for="name" class="col-sm-2 col-form-label">Site Name</label>
+					<div class="col-sm-10">
+						<input type="text" class="form-control" id="sitename" name="sitename" placeholder="Ex: Main Office">
 					</div>
-					<div class="form-group">
-						<label for="hostdiscoverymethod" class="col-sm-2 control-label">Host Discovery Method</label>
-						<div class="col-sm-10">
-							<div class="btn-group" data-toggle="buttons">
-								<label class="btn btn-primary active">
-									<input type="radio" name="hostdiscoverymethod" id="h-disco-icmp" checked value="icmp"> Standard ICMP </input>
-								</label>
-								<label class="btn btn-primary">
-									<input type="radio" name="hostdiscoverymethod" id="h-disco-aggressive" value="aggressive"> Aggressive </input>
-								</label>
+				</div>
+				<div class="form-group row">
+					<label for="subnet" class="col-sm-2 col-form-label">Subnet, Network Range or List</label>
+					<div class="col-sm-10">
+						<input type="text" class="form-control" id="subnet" name="subnet" placeholder="Ex: 192.168.0.0/24 OR 192.168.0.1-20 OR 192.168.0.1 192.168.0.5 192.168.0.9">
+						<small class="form-text text-muted">On the next page you will select which hosts from this subnet you want to monitor.</small>
+					</div>
+				</div>
+				<div class="card mb-3">
+					<div class="card-header">
+						<h5 class="mb-0">
+						<button type="button" class="btn btn-link collapsed" data-toggle="collapse" data-target="#collapseOne">Advanced Options <span class="oi oi-chevron-bottom" aria-hidden="true"></span></button>
+						</h5>
+					</div>
+					<div id="collapseOne" class="collapse">
+						<div class="card-body">
+							<div class="form-group row">
+							<label for="exclude" class="col-sm-2 col-form-label">Exclude IPs</label>
+								<div class="col-sm-10">
+									<input type="text" class="form-control" id="exclude" name="exclude" placeholder="Ex: 192.168.0.1 OR 192.168.0.1 192.168.0.2 OR 192.168.0.1-10">
+									<small class="form-text text-muted">Enter a single, list, range or combination of IPs you want exluded from scanning.</small>
+								</div>
 							</div>
-							<span class="help-block">Use Standard ICMP unless your hosts do not respond to standard ICMP type 8 requests.</span>
-						</div>
-					</div>
-					<!--<div class="form-group">
-						<label for="servicediscoverymethod" class="col-sm-2 control-label">Service Discovery Method</label>
-						<div class="col-sm-10">
-							<div class="btn-group" data-toggle="buttons">
-								<label class="btn btn-primary active" onclick="$(\'#customdiscoform\').collapse(\'hide\');">
-									<input type="radio" name="servicediscoverymethod" id="s-disco-fast" checked value="fast"> Fast (100 most common) </input>
-								</label>
-								<label class="btn btn-primary" onclick="$(\'#customdiscoform\').collapse(\'hide\');">
-									<input type="radio" name="servicediscoverymethod" id="s-disco-std" value="standard"> Standard (1000 most common) </input>
-								</label>
-								<label class="btn btn-primary" onclick="$(\'#customdiscoform\').collapse(\'show\');">
-									<input type="radio" name="servicediscoverymethod" id="s-disco-custom" value="custom"> Custom </input>
-								</label>
+							<div class="form-group row">
+								<label for="hostdiscoverymethod" class="col-sm-2 col-form-label">Host Discovery Method</label>
+								<div class="col-sm-10">
+									<div class="btn-group btn-group-toggle" data-toggle="buttons">
+										<label class="btn btn-primary active">
+											<input type="radio" name="hostdiscoverymethod" id="h-disco-icmp" checked value="icmp"> Standard ICMP
+										</label>
+										<label class="btn btn-primary">
+											<input type="radio" name="hostdiscoverymethod" id="h-disco-aggressive" value="aggressive"> Aggressive
+										</label>
+									</div>
+									<small class="form-text text-muted">Use Standard ICMP unless your hosts do not respond to standard ICMP type 8 requests.</small>
+								</div>
 							</div>
 						</div>
 					</div>
-					<div class="form-group collapse" id="customdiscoform">
-						<label for="customdisco" class="col-sm-2 control-label">Service Discovery Ports</label>
-						<div class="col-sm-10">
-							<input type="text" class="form-control" id="customdisco" name="customdisco" placeholder="Ex: 25,53,80,443,3389 OR 1-65535">
-						</div>
-					</div>-->
+				</div>
+				<button type="submit" class="btn btn-block btn-lg btn-primary">Discover Hosts</button>
+			</form>
+		</div>
+	</div>
+	<div class="card d-none" id="add-site-results-card">
+		<div class="card-body" id="add-site-results">
+			<h2>Discovering Hosts, Please Wait...</h2>
+			<div class="progress">
+				<div class="progress-bar progress-bar-striped progress-bar-animated" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
+					<span class="sr-only">Scanning</span>
 				</div>
 			</div>
 		</div>
-		<div class="form-group">
-			<div class="col-sm-offset-2 col-sm-10">
-				<button type="submit" class="btn btn-default btn-primary">Start Initial Discovery</button>
-			</div>
-		</div>
-	</form>
-	<div class="hidden" id="add-site-results">
-		<h2>Discovering Hosts, Please Wait...</h2>
-		<div class="progress">
-			<div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-				<span class="sr-only">Scanning</span>
-			</div>
-		</div>
-	</div>';
+	</div>
+</div>';
 
 $endscript = "
 	<script src='js/bootstrap-toggle.min.js'></script>
@@ -206,8 +196,8 @@ $endscript = "
 			$('#add-site-form').ajaxForm({ 
 				target: '#add-site-results', 
 				beforeSubmit: function() {
-					$('#add-site-form').addClass('hidden');
-					$('#add-site-results').removeClass('hidden');
+					$('#add-site-form-card').addClass('d-none');
+					$('#add-site-results-card').removeClass('d-none');
 				}
 			}); 
 		});

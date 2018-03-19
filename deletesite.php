@@ -40,23 +40,26 @@ if (isset($_GET['id'])) {
 			echo '<h4>', $site_name, ' was unable to be deleted due to an error</h4>';
 		echo '
 		<div class="modal-footer">
-			<a href="settings.php" class="btn btn-default">Close</a>
+			<a href="settings.php" class="btn btn-secondary">Close</a>
 		</div>';
 	}
 	else {
 		echo '
 		<div class="modal-content">
 			<div class="modal-header">
-				<h4 class="modal-title" id="myModalLabel">Delete Site?</h4>
+				<h5 class="modal-title">Delete ', $site_name, ' Site?</h5>
 			</div>
 			<form id="deletesite" action="deletesite.php?id=', $site_id, '&amp;name=', $site_name, '" method="POST">
 			<div class="modal-body">
-				<h4>Are you sure you want to delete site ', $site_name, '?</h4>
-				<input type="checkbox" name="confirmed" onchange="document.getElementById(\'deletebutton\').disabled = !this.checked;"> I understand this will remove all hosts and data related to this site.<br />
+				<p>This will remove all hosts and historical data related to this site.</p>
+				<div class="custom-control custom-checkbox">
+					<input type="checkbox" name="confirmed" id="confirmed" class="custom-control-input" onchange="document.getElementById(\'deletebutton\').disabled = !this.checked;">
+					<label class="custom-control-label" for="confirmed">Check this box to confirm</label>
+				</div>
 			</div>
 			<div class="modal-footer">
-				<button type="submit" id="deletebutton" class="btn btn-danger" disabled="disabled"><span class="glyphicon glyphicon-trash"></span> Delete</button>
-				<button type="button" class="btn btn-default" data-dismiss="modal">Cancel</button>
+				<button type="submit" id="deletebutton" class="btn btn-danger" disabled="disabled"><span class="oi oi-trash" title="Delete" aria-hidden="true"></span> Delete</button>
+				<button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
 			</div>
 			</form>
 		</div>';
