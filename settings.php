@@ -61,7 +61,7 @@ db_execute($site_stmt);
 $site_result = db_fetch($site_stmt);
 echo '
 <div class="container">
-	<div class="card m-3">
+	<div class="card mb-3">
 		<h4 class="card-header">Sites</h4>';
 if (!empty($site_result)) {
 	echo '
@@ -90,13 +90,13 @@ echo '
 			<a href="addsite.php" class="btn btn-outline-primary">Add Site</a><br />
 		</div>
 	</div>
-	<div class="card m-3">
+	<div class="card mb-3">
 		<h4 class="card-header">Other Functions</h4>
 		<div class="card-body">
 			<a href="settings.php?mailtest" class="btn btn-outline-secondary">Send Test Email</a>
 		</div>
 	</div>
-	<div class="card m-3">
+	<div class="card">
 		<h4 class="card-header">Last 10 Run Stats</h4>
 		<table class="table table-hover table-sm table-responsive text-center">
 			<thead>

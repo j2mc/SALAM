@@ -91,7 +91,9 @@ function page_start($breadcrumb, $tv = FALSE, $script = '', $column_count = 2) {
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 	<title>', $pagetitle, ' - SALAM</title>
 	<link rel="stylesheet" href="css/bootstrap.min.css" />
-	<link rel="stylesheet" href="css/open-iconic-bootstrap.min.css" />
+	<link rel="stylesheet" href="css/open-iconic-bootstrap.min.css" />';
+	if ($pagetitle == 'Dashboard') {
+		echo '
 	<style>
 	@media (min-width: 576px) {
 		.card-columns {
@@ -108,7 +110,9 @@ function page_start($breadcrumb, $tv = FALSE, $script = '', $column_count = 2) {
 			column-count: ', $column_count, ';
 		}
 	}
-	</style>', 
+	</style>';
+	}
+	echo 
 	$script, '	
 	</head>
 	<body>
