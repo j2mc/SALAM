@@ -16,6 +16,7 @@ if (isset($_GET['type']) && isset($_GET['id']) && isset($_GET['range'])) {
 	if ($range == 1) {
 		$titlerange = '24 Hours';
 		$timeunit = 'hour';
+		$legend = FALSE;
 		$checkdata_stmt = db_prepare("SELECT time, rtime FROM checkdata WHERE type = ? AND type_id = ? and time > ?");
 		db_execute($checkdata_stmt, array($type, $id, time() - 86400));
 		$checkdata = db_fetch($checkdata_stmt);
@@ -49,6 +50,7 @@ if (isset($_GET['type']) && isset($_GET['id']) && isset($_GET['range'])) {
 			$titlerange = 'Year';
 			$timeunit = 'month';
 		}
+		$legend = TRUE;
 		$range *= 86400;
 		$archivedata_stmt = db_prepare("SELECT time, min_rt, avg_rt, max_rt FROM archivedata WHERE type = ? AND type_id = ? AND time > ? AND resolution = ? ORDER BY time ASC");
 		db_execute($archivedata_stmt, array($type, $id, time() - $range, $resolution));
@@ -91,7 +93,7 @@ if (isset($_GET['type']) && isset($_GET['id']) && isset($_GET['range'])) {
 	$chartdata['options'] = array(
 		'title' => array('display' => 'true', 'text' => 'Response Time Last ' . $titlerange),
 		'scales' => array('xAxes' => $xAxes, 'yAxes' => $yAxes),
-		'legend' => array('display' => false),
+		'legend' => array('display' => $legend),
 		'elements' => array('line' => array('tension' => 0))
 	);
 	echo json_encode($chartdata);
