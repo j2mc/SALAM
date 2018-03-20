@@ -94,7 +94,8 @@ if (isset($_GET['type']) && isset($_GET['id']) && isset($_GET['range'])) {
 		'title' => array('display' => 'true', 'text' => 'Response Time Last ' . $titlerange),
 		'scales' => array('xAxes' => $xAxes, 'yAxes' => $yAxes),
 		'legend' => array('display' => $legend),
-		'elements' => array('line' => array('tension' => 0))
+		'elements' => array('line' => array('tension' => 0)),
+		'tooltips' => array('mode' => 'index')
 	);
 	echo json_encode($chartdata);
 }
