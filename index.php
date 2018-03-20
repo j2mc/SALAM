@@ -44,7 +44,7 @@ function overview() {
 								db_execute($alert_stmt, array($host['id']));
 								$alerts = db_fetch($alert_stmt, 'row');
 								if ($alerts[0] > 0) {
-									$badge = '<span class="badge">' . $alerts[0] . '</span>';
+									$badge = '<span class="badge badge-secondary float-right">' . $alerts[0] . '</span>';
 									$host['status'] = $alerts[1];
 								}									
 							}
