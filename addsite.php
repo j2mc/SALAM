@@ -17,11 +17,11 @@ if (isset($_POST['sitename']) && isset($_POST['subnet'])) {
 		$hostcmd = "-sn";
 	else
 		$hostcmd = "-sn -PE";
-	$site_stmt = db_prepare("INSERT INTO sites (name, subnet, exclude, hostmethod) VALUES (?, ?, ?, ?)");
-	$site_result = db_execute($site_stmt, array($sitename, $subnet, $exclude, $hostdiscoverymethod));
-	if ($site_result['result']) {
+	$nmapoutput = nmap_cmd($hostcmd . ' -oX - ' . $subnet);
+	if ($nmapoutput->runstats->hosts['up'] > 0) {
 		echo '<div class="panel-group">';
-		$nmapoutput = nmap_cmd($hostcmd . ' -oX - ' . $subnet);
+		$site_stmt = db_prepare("INSERT INTO sites (name, subnet, exclude, hostmethod) VALUES (?, ?, ?, ?)");
+		$site_result = db_execute($site_stmt, array($sitename, $subnet, $exclude, $hostdiscoverymethod));
 		$data_stmt = db_prepare("INSERT INTO hostdata (host_id, type, data) VALUES (?, ?, ?)");
 		$host_stmt = db_prepare("INSERT INTO hosts (site_id, avg_rt, avg_count) VALUES (?, ?, ?)");
 		$hostname_stmt = db_prepare("UPDATE hosts SET name=?, description=? WHERE id=?");
@@ -112,7 +112,8 @@ if (isset($_POST['sitename']) && isset($_POST['subnet'])) {
 			  })
 			</script>";
 	}
-	
+	else
+		die('No Hosts Found');
 } else {
 
 $breadcrumb = array(
