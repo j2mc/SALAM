@@ -14,7 +14,7 @@ if (isset($_POST['sitename']) && isset($_POST['subnet'])) {
 	$exclude = check_xss($_POST['exclude']);
 	$hostdiscoverymethod = check_xss($_POST['hostdiscoverymethod']);
 	if ($hostdiscoverymethod == 'aggressive')
-		$hostcmd = "-sn";
+		$hostcmd = "-sn -PE -PS80,443";
 	else
 		$hostcmd = "-sn -PE";
 	$nmapoutput = nmap_cmd($hostcmd . ' -oX - ' . $subnet);

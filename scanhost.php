@@ -96,7 +96,7 @@ elseif (isset($_GET['scan'])) {
 	$ip = db_fetch($ip_stmt, 'col');
 	db_execute($host_stmt, array($host_id));
 	$hostinfo = db_fetch($host_stmt, 'row');
-	$nmapoutput = nmap_cmd(' -n -Pn -sT -oX - ' . $ip);
+	$nmapoutput = nmap_cmd(' -n -Pn -sS --open -T5 -oX - ' . $ip);
 	$host_stmt = db_prepare("UPDATE hosts SET enabled=? WHERE id=?");
 	db_execute($host_stmt, array(TRUE, $host_id));
 	$service_stmt = db_prepare("INSERT INTO services (host_id, type, port, name, avg_rt, avg_count) VALUES (?, ?, ?, ?, ?, ?)");

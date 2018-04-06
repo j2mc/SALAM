@@ -245,7 +245,7 @@ function run_checks() {
 				$runstats['hosts']++;
 			}
 			if ($site['hostmethod'] == "aggressive")
-				$hostcmd = "-sn -v -n";
+				$hostcmd = "-sn -PE -PS80,443 -v -n";
 			else
 				$hostcmd = "-sn -PE -v -n";
 			$nmapoutput = nmap_cmd($hostcmd . ' -oX - ' . $hostlist);
