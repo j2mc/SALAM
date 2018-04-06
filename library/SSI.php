@@ -65,9 +65,13 @@ function db_fetch($db_stmt, $type = 'all') {
 }
 
 function nmap_cmd($cmd) {
-	global $nmappath, $use_sudo;
+	global $nmappath, $use_sudo, $use_privileged;
 	if (!file_exists($nmappath))
 		die("Nmap Not Found");
+	if ($use_sudo)
+		$nmappath = 'sudo ' . $nmappath;
+	if ($use_privileged)
+		$cmd = '--privileged ' . $cmd;
 	$fullcmd = $nmappath . ' ' . $cmd;
 	$output = shell_exec($fullcmd);
 	$xmloutput = new SimpleXMLElement($output);
