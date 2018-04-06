@@ -31,6 +31,17 @@ Setup Apache:
 
 Then restart Apache `systemctl restart apache2`
 
+Allow www-data to run nmap with prvilidged access:
+Option 1
+```
+apt install libcap
+setcap cap_net_raw,cap_net_admin,cap_net_bind_service+eip /usr/bin/nmap
+```
+And set 'use_priviledged' to TRUE in settings.ini
+
+Option 2
+Install sudo, edit sudoers file to allow www-data user to run /usr/bin/nmap as sudo without password, then set 'use_sudo' to TRUE in settings.ini
+
 Set SALAM to run in the background:
 `crontab -e -u www-data`
 Add `* * * * * php /var/www/SALAM/backend.php` to bottom of file
@@ -40,8 +51,6 @@ Add `* * * * * php /var/www/SALAM/backend.php` to bottom of file
 cd /var/www
 mv SALAM SALAM.old
 git clone https://github.com/j2mc/SALAM.git
-cd SALAM
-mysql -u root -p < salam180319update.sql
-nano library/settings.ini
+nano SALAM/library/settings.ini
 ```
 Enter your email info into the settings.ini again
