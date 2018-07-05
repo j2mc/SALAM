@@ -68,11 +68,12 @@ function nmap_cmd($cmd) {
 	global $nmappath, $use_sudo, $use_privileged;
 	if (!file_exists($nmappath))
 		die("Nmap Not Found");
-	if ($use_sudo)
-		$nmappath = 'sudo ' . $nmappath;
 	if ($use_privileged)
 		$cmd = '--privileged ' . $cmd;
-	$fullcmd = $nmappath . ' ' . $cmd;
+	if ($use_sudo)
+		$fullcmd = 'sudo ' . $nmappath . ' ' . $cmd;
+	else
+		$fullcmd = $nmappath . ' ' . $cmd;
 	$output = shell_exec($fullcmd);
 	$xmloutput = new SimpleXMLElement($output);
 	return $xmloutput;
